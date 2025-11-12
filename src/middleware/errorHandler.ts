@@ -6,15 +6,23 @@ import { logError } from '../utils/logger.js';
 const isProduction = env.nodeEnv === 'production';
 
 export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
-  const httpError = createHttpError(err.status || 500, err.message || 'Internal Server Error');
+  // Log all errors for debugging
+  logError('Request error', {
+    message: err.message,
+    status: err.status || err.statusCode,
+    stack: err.stack,
+    name: err.name,
+  });
 
-  if (!isProduction) {
-    logError('Request error', err);
-  }
+  const httpError = createHttpError(err.status || err.statusCode || 500, err.message || 'Internal Server Error');
 
   res.status(httpError.statusCode).json({
     success: false,
     message: httpError.message,
-    ...(isProduction ? null : { stack: err.stack }),
+    ...(!isProduction ? { 
+      stack: err.stack,
+      error: err.name,
+      details: err.message,
+    } : {}),
   });
 };

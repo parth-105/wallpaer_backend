@@ -43,7 +43,12 @@ export async function listWallpapers(req, res, next) {
 }
 export async function getWallpaperById(req, res, next) {
     try {
-        const wallpaper = await WallpaperModel.findById(req.params.id).lean().exec();
+        const { id } = req.params;
+        // Validate ObjectId format
+        if (!id || typeof id !== 'string' || !mongoose.Types.ObjectId.isValid(id)) {
+            throw createHttpError(400, 'Invalid wallpaper ID format');
+        }
+        const wallpaper = await WallpaperModel.findById(id).lean().exec();
         if (!wallpaper) {
             throw createHttpError(404, 'Wallpaper not found');
         }
@@ -81,19 +86,23 @@ export async function getFeaturedWallpapers(req, res, next) {
 }
 export async function recordWallpaperClick(req, res, next) {
     try {
-        const idParam = req.params.id;
-        if (typeof idParam !== 'string' || !mongoose.Types.ObjectId.isValid(idParam)) {
-            throw createHttpError(400, 'Invalid wallpaper id');
+        const { id } = req.params;
+        // Validate ObjectId format
+        if (!id || typeof id !== 'string' || !mongoose.Types.ObjectId.isValid(id)) {
+            throw createHttpError(400, 'Invalid wallpaper ID format');
         }
-        const id = idParam;
         const updated = await WallpaperModel.findByIdAndUpdate(id, { $inc: { 'metrics.clickCount': 1 } }, { new: true }).exec();
         if (!updated) {
             throw createHttpError(404, 'Wallpaper not found');
         }
+        // Ensure ID exists
+        if (!updated._id) {
+            throw createHttpError(500, 'Wallpaper ID is missing');
+        }
         res.json(createResponse({
             data: {
                 clickCount: updated.metrics?.clickCount ?? 0,
-                id: updated.id,
+                id: updated._id.toString(),
             },
         }));
     }

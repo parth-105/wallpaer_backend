@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import createHttpError from 'http-errors';
 import axios from 'axios';
+import mongoose from 'mongoose';
 import { uploadBufferToCloudinary, deleteFromCloudinary } from '../services/cloudinaryService.js';
 import { IWallpaper, MediaInfo, WallpaperModel } from '../models/Wallpaper.js';
 import { createResponse } from '../utils/apiResponse.js';
@@ -47,6 +48,9 @@ export async function createWallpaper(req: Request, res: Response, next: NextFun
     let resolvedRank: number | null = null;
     if (rank) {
       resolvedRank = Number(rank);
+      if (isNaN(resolvedRank) || resolvedRank < 1) {
+        throw createHttpError(400, 'Rank must be a positive number');
+      }
       await shiftRanks({
         type: wallpaperType,
         desiredRank: resolvedRank,
@@ -98,6 +102,12 @@ export async function createWallpaper(req: Request, res: Response, next: NextFun
 export async function updateWallpaper(req: Request, res: Response, next: NextFunction) {
   try {
     const { id } = req.params;
+    
+    // Validate ObjectId format
+    if (!id || typeof id !== 'string' || !mongoose.Types.ObjectId.isValid(id)) {
+      throw createHttpError(400, 'Invalid wallpaper ID format');
+    }
+
     const updates: Record<string, unknown> = {};
     const body = req.body ?? {};
 
@@ -107,6 +117,9 @@ export async function updateWallpaper(req: Request, res: Response, next: NextFun
     let desiredRank: number | null | undefined;
     if (body.rank !== undefined) {
       desiredRank = body.rank ? Number(body.rank) : null;
+      if (desiredRank !== null && (isNaN(desiredRank) || desiredRank < 1)) {
+        throw createHttpError(400, 'Rank must be a positive number');
+      }
     }
     if (body.isFeatured !== undefined) {
       updates.isFeatured = body.isFeatured === 'true' || body.isFeatured === true;
@@ -128,6 +141,11 @@ export async function updateWallpaper(req: Request, res: Response, next: NextFun
     const wallpaper = await WallpaperModel.findById(id).exec();
     if (!wallpaper) {
       throw createHttpError(404, 'Wallpaper not found');
+    }
+
+    // Ensure wallpaper has an ID
+    if (!wallpaper._id) {
+      throw createHttpError(500, 'Wallpaper ID is missing');
     }
 
     if (req.file) {
@@ -164,13 +182,13 @@ export async function updateWallpaper(req: Request, res: Response, next: NextFun
       } else {
         if (wallpaper.rank !== desiredRank) {
           if (wallpaper.rank != null) {
-            await WallpaperModel.updateOne({ _id: wallpaper.id }, { $set: { rank: null } }).exec();
+            await WallpaperModel.updateOne({ _id: wallpaper._id }, { $set: { rank: null } }).exec();
           }
 
           await shiftRanks({
             type: effectiveType,
             desiredRank,
-            excludeId: wallpaper.id,
+            excludeId: wallpaper._id.toString(),
           });
         }
         targetRank = desiredRank;
@@ -193,6 +211,12 @@ export async function updateWallpaper(req: Request, res: Response, next: NextFun
 export async function clearWallpaperRank(req: Request, res: Response, next: NextFunction) {
   try {
     const { id } = req.params;
+    
+    // Validate ObjectId format
+    if (!id || typeof id !== 'string' || !mongoose.Types.ObjectId.isValid(id)) {
+      throw createHttpError(400, 'Invalid wallpaper ID format');
+    }
+
     const updated = await WallpaperModel.findByIdAndUpdate(
       id,
       { $set: { rank: null }, $unset: { isFeatured: '' } },
@@ -214,12 +238,29 @@ export async function clearWallpaperRank(req: Request, res: Response, next: Next
 export async function deleteWallpaper(req: Request, res: Response, next: NextFunction) {
   try {
     const { id } = req.params;
+    
+    // Validate ObjectId format
+    if (!id || typeof id !== 'string' || !mongoose.Types.ObjectId.isValid(id)) {
+      throw createHttpError(400, 'Invalid wallpaper ID format');
+    }
+
     const wallpaper = await WallpaperModel.findByIdAndDelete(id).lean().exec();
     if (!wallpaper) {
       throw createHttpError(404, 'Wallpaper not found');
     }
 
-    await deleteFromCloudinary(wallpaper.media.publicId, wallpaper.media.resourceType);
+    // Validate media data exists
+    if (!wallpaper.media || !wallpaper.media.publicId || !wallpaper.media.resourceType) {
+      console.warn('Wallpaper deleted but media information is missing', wallpaper._id);
+      return res.status(204).send();
+    }
+
+    try {
+      await deleteFromCloudinary(wallpaper.media.publicId, wallpaper.media.resourceType);
+    } catch (cloudinaryError) {
+      // Log error but don't fail the request if Cloudinary deletion fails
+      console.error('Failed to delete from Cloudinary', cloudinaryError);
+    }
 
     res.status(204).send();
   } catch (error) {
@@ -268,6 +309,9 @@ export async function importWallpapers(req: Request, res: Response, next: NextFu
       let resolvedRank: number | null = null;
       if (item.rank) {
         resolvedRank = Number(item.rank);
+        if (isNaN(resolvedRank) || resolvedRank < 1) {
+          throw createHttpError(400, `Rank must be a positive number for item: ${item.title || 'unknown'}`);
+        }
         await shiftRanks({
           type: wallpaperType,
           desiredRank: resolvedRank,
