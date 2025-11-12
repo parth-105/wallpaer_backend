@@ -15,6 +15,6 @@ connectDatabase()
   });
 
 // Export the Express app as a serverless function
-// Vercel will handle routing all requests to this app
+// Vercel will handle routing all requests to this app via rewrites
 export default app;
 
