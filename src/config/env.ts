@@ -1,9 +1,9 @@
 import dotenv from 'dotenv';
 
+// Only load .env file in development (not in production on Vercel)
+// In production, Vercel injects environment variables automatically
 if (process.env.NODE_ENV !== 'production') {
   dotenv.config();
-} else {
-  dotenv.config({ path: '.env' });
 }
 
 const requiredEnv = [

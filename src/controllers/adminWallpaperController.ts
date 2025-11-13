@@ -27,23 +27,57 @@ function ensureWallpaperType(type?: string): 'static' | 'live' {
 
 export async function createWallpaper(req: Request, res: Response, next: NextFunction) {
   try {
-    const { title, description, type, status, rank, tags, categories, isFeatured } = req.body;
+    const { title, description, type, status, rank, tags, categories, isFeatured, cloudinaryUrl, cloudinaryPublicId } = req.body;
 
     if (!title) {
       throw createHttpError(400, 'Title is required');
     }
 
     const wallpaperType = ensureWallpaperType(type);
-
-    if (!req.file) {
-      throw createHttpError(400, 'Media file is required');
-    }
-
     const resourceType = wallpaperType === 'live' ? 'video' : 'image';
-    const uploadResult = await uploadBufferToCloudinary(req.file.buffer, {
-      resourceType,
-      folder: wallpaperType === 'live' ? 'wallpapers/live' : 'wallpapers/static',
-    });
+
+    let uploadResult: any;
+
+    // Support both direct file upload (small files) and Cloudinary URL (large files)
+    if (req.file) {
+      // Direct file upload for small files (< 4MB)
+      uploadResult = await uploadBufferToCloudinary(req.file.buffer, {
+        resourceType,
+        folder: wallpaperType === 'live' ? 'wallpapers/live' : 'wallpapers/static',
+      });
+    } else if (cloudinaryUrl && cloudinaryPublicId) {
+      // Cloudinary URL from client-side upload (large files >= 4MB)
+      // Get resource details from Cloudinary
+      const { getCloudinaryResource } = await import('../services/cloudinaryService.js');
+      try {
+        uploadResult = await getCloudinaryResource(cloudinaryPublicId);
+        
+        // Use the provided URL if it differs from the resource URL
+        if (cloudinaryUrl) {
+          uploadResult.secure_url = cloudinaryUrl;
+        }
+      } catch (error) {
+        // If we can't get the resource, create a minimal response from the URL
+        // Extract file extension and format from URL
+        const urlParts = cloudinaryUrl.split('.');
+        const extension = urlParts[urlParts.length - 1].split('?')[0];
+        
+        uploadResult = {
+          public_id: cloudinaryPublicId,
+          secure_url: cloudinaryUrl,
+          url: cloudinaryUrl,
+          format: extension,
+          resource_type: resourceType as 'image' | 'video',
+          bytes: 0,
+          width: 0,
+          height: 0,
+          duration: undefined,
+          thumbnail_url: cloudinaryUrl,
+        };
+      }
+    } else {
+      throw createHttpError(400, 'Either media file or Cloudinary URL is required. For files larger than 4MB, use client-side Cloudinary upload.');
+    }
 
     let resolvedRank: number | null = null;
     if (rank) {
