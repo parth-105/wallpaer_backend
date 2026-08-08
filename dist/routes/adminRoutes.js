@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { clearWallpaperRank, createWallpaper, deleteWallpaper, importWallpapers, updateWallpaper, } from '../controllers/adminWallpaperController.js';
+import { clearWallpaperRank, createWallpaper, deleteWallpaper, importWallpapers, updateWallpaper, triggerAutoImport, getSystemStats, } from '../controllers/adminWallpaperController.js';
 import { getUploadParams } from '../controllers/uploadController.js';
 import { authenticateJwt } from '../middleware/authenticate.js';
 import { requireAdmin } from '../middleware/requireAdmin.js';
@@ -19,5 +19,7 @@ router.patch('/wallpapers/:id', upload.single('media'), handleMulterError, updat
 router.delete('/wallpapers/:id/rank', clearWallpaperRank);
 router.delete('/wallpapers/:id', deleteWallpaper);
 router.post('/wallpapers/import', importWallpapers);
+router.post('/auto-import', triggerAutoImport);
+router.get('/stats', getSystemStats);
 export default router;
 //# sourceMappingURL=adminRoutes.js.map

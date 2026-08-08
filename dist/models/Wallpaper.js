@@ -27,6 +27,7 @@ const WallpaperSchema = new Schema({
     metrics: {
         clickCount: { type: Number, default: 0 },
     },
+    storageProvider: { type: String, enum: ['cloudinary', 'r2', 'external'], default: 'cloudinary' },
 }, {
     timestamps: true,
 });
@@ -38,5 +39,8 @@ WallpaperSchema.index({ type: 1, rank: 1 }, {
     name: 'unique_rank_per_type',
 });
 WallpaperSchema.index({ isFeatured: 1, updatedAt: -1 });
+WallpaperSchema.index({ categories: 1, type: 1, rank: 1 });
+WallpaperSchema.index({ 'metrics.clickCount': -1, updatedAt: -1 });
+WallpaperSchema.index({ externalSource: 1, externalId: 1 }, { unique: true, sparse: true, name: 'unique_external_source_id' });
 export const WallpaperModel = model('Wallpaper', WallpaperSchema);
 //# sourceMappingURL=Wallpaper.js.map

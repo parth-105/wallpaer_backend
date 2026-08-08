@@ -9,6 +9,7 @@ import authRoutes from './routes/authRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { requestLogger } from './utils/logger.js';
 import { env } from './config/env.js';
+import { publicRateLimiter } from './middleware/rateLimiter.js';
 const app = express();
 // Get allowed origins, handle wildcard and empty values
 const clientOrigin = env.cors.clientOrigin;
@@ -112,12 +113,18 @@ app.get('/test-routes', (_req, res) => {
     });
 });
 // Mount routes at /api (primary path)
-app.use('/api', routes);
+app.use('/api', publicRateLimiter, routes);
+// CDN cache headers middleware for public routes
+const cdnCacheHeaders = (_req, res, next) => {
+    // Cache public wallpaper responses at CDN edge for 5 minutes
+    res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
+    next();
+};
 // Also mount routes without /api prefix for backward compatibility
 // This allows frontend to call /public/wallpapers or /api/public/wallpapers
 // These routes use the same controllers and middleware as /api routes
 // IMPORTANT: Routes must be mounted AFTER /api routes but BEFORE catch-all handler
-app.use('/public', publicRoutes);
+app.use('/public', publicRateLimiter, cdnCacheHeaders, publicRoutes);
 app.use('/admin', adminRoutes);
 app.use('/auth', authRoutes);
 // Log route registration in development

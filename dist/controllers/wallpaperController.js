@@ -87,9 +87,14 @@ export async function getFeaturedWallpapers(req, res, next) {
 export async function recordWallpaperClick(req, res, next) {
     try {
         const { id } = req.params;
-        // Validate ObjectId format
-        if (!id || typeof id !== 'string' || !mongoose.Types.ObjectId.isValid(id)) {
-            throw createHttpError(400, 'Invalid wallpaper ID format');
+        if (!id || typeof id !== 'string') {
+            throw createHttpError(400, 'Wallpaper ID is required');
+        }
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.json(createResponse({
+                data: { clickCount: 1 },
+                message: 'Click recorded for local/external item',
+            }));
         }
         const updated = await WallpaperModel.findByIdAndUpdate(id, { $inc: { 'metrics.clickCount': 1 } }, { new: true }).exec();
         if (!updated) {

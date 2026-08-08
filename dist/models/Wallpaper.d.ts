@@ -30,6 +30,7 @@ export interface IWallpaper {
     metadata?: Record<string, unknown>;
     publishedAt?: Date;
     metrics: EngagementMetrics;
+    storageProvider?: 'cloudinary' | 'r2' | 'external';
 }
 export interface IWallpaperDocument extends IWallpaper, Document {
     createdAt: Date;

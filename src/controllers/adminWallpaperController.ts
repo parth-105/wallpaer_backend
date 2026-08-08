@@ -6,6 +6,9 @@ import { uploadBufferToCloudinary, deleteFromCloudinary } from '../services/clou
 import { IWallpaper, MediaInfo, WallpaperModel } from '../models/Wallpaper.js';
 import { createResponse } from '../utils/apiResponse.js';
 import { shiftRanks } from '../services/rankService.js';
+import { autoImportFromAPIs } from '../services/autoImportService.js';
+import { getCacheStats } from '../services/searchCache.js';
+import { isR2Configured } from '../config/r2.js';
 
 function parseStringArray(input?: string | string[]): string[] {
   if (!input) return [];
@@ -391,3 +394,55 @@ export async function importWallpapers(req: Request, res: Response, next: NextFu
     next(error);
   }
 }
+
+export async function triggerAutoImport(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { pexelsPhotos, pexelsVideos, pixabayPhotos, pixabayVideos, wallhavenPhotos } = req.body || {};
+    const config: Record<string, number> = {};
+    if (pexelsPhotos != null) config.pexelsPhotos = Number(pexelsPhotos);
+    if (pexelsVideos != null) config.pexelsVideos = Number(pexelsVideos);
+    if (pixabayPhotos != null) config.pixabayPhotos = Number(pixabayPhotos);
+    if (pixabayVideos != null) config.pixabayVideos = Number(pixabayVideos);
+    if (wallhavenPhotos != null) config.wallhavenPhotos = Number(wallhavenPhotos);
+    await autoImportFromAPIs(config);
+    res.json(createResponse({ data: { message: 'Auto-import completed successfully.' } }));
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getSystemStats(req: Request, res: Response, next: NextFunction) {
+  try {
+    const cacheStats = getCacheStats();
+    const r2Configured = isR2Configured();
+    const totalCount = await WallpaperModel.countDocuments();
+    const staticCount = await WallpaperModel.countDocuments({ type: 'static' });
+    const liveCount = await WallpaperModel.countDocuments({ type: 'live' });
+    const pexelsCount = await WallpaperModel.countDocuments({ externalSource: 'pexels' });
+    const pixabayCount = await WallpaperModel.countDocuments({ externalSource: 'pixabay' });
+    const wallhavenCount = await WallpaperModel.countDocuments({ externalSource: 'wallhaven' });
+
+    res.json(createResponse({
+      data: {
+        cacheStats,
+        storage: {
+          r2Configured,
+          provider: r2Configured ? 'Cloudflare R2' : 'Cloudinary / CDN',
+        },
+        counts: {
+          total: totalCount,
+          static: staticCount,
+          live: liveCount,
+          bySource: {
+            pexels: pexelsCount,
+            pixabay: pixabayCount,
+            wallhaven: wallhavenCount,
+          },
+        },
+      },
+    }));
+  } catch (error) {
+    next(error);
+  }
+}
+

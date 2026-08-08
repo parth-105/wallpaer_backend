@@ -9,6 +9,8 @@ import authRoutes from './routes/authRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { requestLogger } from './utils/logger.js';
 import { env } from './config/env.js';
+import { publicRateLimiter, searchRateLimiter } from './middleware/rateLimiter.js';
+import { apiKeyAuth } from './middleware/apiKeyAuth.js';
 
 const app = express();
 
@@ -47,14 +49,14 @@ app.use(
         // Check if it's a localhost origin
         try {
           const originUrl = new URL(origin);
-          const isLocalhost = originUrl.hostname === 'localhost' || 
-                             originUrl.hostname === '127.0.0.1' ||
-                             originUrl.hostname.startsWith('192.168.');
-          
+          const isLocalhost = originUrl.hostname === 'localhost' ||
+            originUrl.hostname === '127.0.0.1' ||
+            originUrl.hostname.startsWith('192.168.');
+
           if (isLocalhost) {
             return callback(null, true);
           }
-          
+
           // Also allow production URL in development for testing
           if (origin === productionFrontendUrl) {
             return callback(null, true);
@@ -62,7 +64,7 @@ app.use(
         } catch {
           // Invalid URL, allow it in development
         }
-        
+
         // Allow all origins in development (permissive for local testing)
         return callback(null, true);
       }
@@ -73,7 +75,7 @@ app.use(
         if (allowedOrigins.includes(origin)) {
           return callback(null, true);
         }
-        
+
         // Pattern match (check hostname)
         const isAllowed = allowedOrigins.some((allowed) => {
           try {
@@ -84,11 +86,11 @@ app.use(
             return origin === allowed;
           }
         });
-        
+
         if (isAllowed) {
           return callback(null, true);
         }
-        
+
         // Origin not allowed
         console.warn(`[CORS] Origin ${origin} is not allowed. Allowed origins: ${allowedOrigins.join(', ')}`);
         return callback(new Error(`Origin ${origin} is not allowed by CORS. Allowed origins: ${allowedOrigins.join(', ')}`));
@@ -100,7 +102,7 @@ app.use(
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-API-Key'],
     exposedHeaders: ['Content-Type', 'Authorization'],
   })
 );
@@ -131,13 +133,20 @@ app.get('/test-routes', (_req, res) => {
 });
 
 // Mount routes at /api (primary path)
-app.use('/api', routes);
+app.use('/api', publicRateLimiter, routes);
+
+// CDN cache headers middleware for public routes
+const cdnCacheHeaders: express.RequestHandler = (_req, res, next) => {
+  // Cache public wallpaper responses at CDN edge for 5 minutes
+  res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
+  next();
+};
 
 // Also mount routes without /api prefix for backward compatibility
 // This allows frontend to call /public/wallpapers or /api/public/wallpapers
 // These routes use the same controllers and middleware as /api routes
 // IMPORTANT: Routes must be mounted AFTER /api routes but BEFORE catch-all handler
-app.use('/public', publicRoutes);
+app.use('/public', apiKeyAuth, publicRateLimiter, cdnCacheHeaders, publicRoutes);
 app.use('/admin', adminRoutes);
 app.use('/auth', authRoutes);
 

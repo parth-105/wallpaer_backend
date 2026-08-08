@@ -30,5 +30,26 @@ export const env = {
         clientOrigin: process.env.CLIENT_ORIGIN ?? '*',
         adminOrigin: process.env.ADMIN_PANEL_ORIGIN ?? '*',
     },
+    // Optional: Cloudflare R2 storage (secondary cheap storage)
+    r2: {
+        accountId: process.env.R2_ACCOUNT_ID ?? '',
+        accessKeyId: process.env.R2_ACCESS_KEY_ID ?? '',
+        secretAccessKey: process.env.R2_SECRET_ACCESS_KEY ?? '',
+        bucketName: process.env.R2_BUCKET_NAME ?? 'wallpaper-assets',
+        publicUrl: process.env.R2_PUBLIC_URL ?? '',
+    },
+    // Optional: 3rd-party wallpaper API keys
+    pixabay: {
+        apiKey: process.env.PIXABAY_API_KEY ?? '',
+    },
+    wallhaven: {
+        apiKey: process.env.WALLHAVEN_API_KEY ?? '',
+    },
+    pexels: {
+        apiKey: process.env.PEXELS_API_KEY ?? '',
+    },
+    unsplash: {
+        accessKey: process.env.UNSPLASH_ACCESS_KEY ?? '',
+    },
 };
 //# sourceMappingURL=env.js.map

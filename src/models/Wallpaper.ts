@@ -34,6 +34,7 @@ export interface IWallpaper {
   metadata?: Record<string, unknown>;
   publishedAt?: Date;
   metrics: EngagementMetrics;
+  storageProvider?: 'cloudinary' | 'r2' | 'external';
 }
 
 export interface IWallpaperDocument extends IWallpaper, Document {
@@ -74,6 +75,7 @@ const WallpaperSchema = new Schema<IWallpaperDocument>(
     metrics: {
       clickCount: { type: Number, default: 0 },
     },
+    storageProvider: { type: String, enum: ['cloudinary', 'r2', 'external'], default: 'cloudinary' },
   },
   {
     timestamps: true,
@@ -91,5 +93,11 @@ WallpaperSchema.index(
   }
 );
 WallpaperSchema.index({ isFeatured: 1, updatedAt: -1 });
+WallpaperSchema.index({ categories: 1, type: 1, rank: 1 });
+WallpaperSchema.index({ 'metrics.clickCount': -1, updatedAt: -1 });
+WallpaperSchema.index(
+  { externalSource: 1, externalId: 1 },
+  { unique: true, sparse: true, name: 'unique_external_source_id' }
+);
 
 export const WallpaperModel = model<IWallpaperDocument>('Wallpaper', WallpaperSchema);
