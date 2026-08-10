@@ -19,7 +19,7 @@ const CATEGORY_PARAMS: Record<string, { sorting?: string; topRange?: string; col
   'supercars':  { q: 'sports car supercar', sorting: 'relevance' },
 };
 
-export const searchWallpapers = async (query: string, page: number = 1, perPage: number = 24): Promise<ExternalWallpaper[]> => {
+export const searchWallpapers = async (query: string, page: number = 1, perPage: number = 24, sort?: string): Promise<ExternalWallpaper[]> => {
   try {
     const apiKey = process.env.WALLHAVEN_API_KEY;
     const cleanQuery = query.toLowerCase().trim();
@@ -29,15 +29,36 @@ export const searchWallpapers = async (query: string, page: number = 1, perPage:
     const minRes = categoryConfig?.atleast || '1920x1080';
     let url = `https://wallhaven.cc/api/v1/search?categories=111&purity=100&atleast=${minRes}&ratios=9x16,10x16,9x18&page=${page}`;
 
-    if (categoryConfig) {
-      // Use mapped params for known categories
-      if (categoryConfig.sorting) url += `&sorting=${categoryConfig.sorting}`;
-      if (categoryConfig.topRange) url += `&topRange=${categoryConfig.topRange}`;
-      if (categoryConfig.colors) url += `&colors=${categoryConfig.colors}`;
-      if (categoryConfig.q) url += `&q=${encodeURIComponent(categoryConfig.q)}`;
+    // Determine query
+    if (categoryConfig && categoryConfig.q) {
+      url += `&q=${encodeURIComponent(categoryConfig.q)}`;
     } else {
-      // Free-text search
-      url += `&q=${encodeURIComponent(query)}&sorting=relevance`;
+      url += `&q=${encodeURIComponent(query)}`;
+    }
+    
+    // Determine colors
+    if (categoryConfig && categoryConfig.colors) {
+      url += `&colors=${categoryConfig.colors}`;
+    }
+
+    // Determine sorting & topRange
+    let finalSorting = categoryConfig?.sorting || 'relevance';
+    let finalTopRange = categoryConfig?.topRange;
+
+    if (sort) {
+      if (sort.startsWith('toplist_')) {
+        finalSorting = 'toplist';
+        finalTopRange = sort.replace('toplist_', '');
+      } else if (sort === 'latest') {
+        finalSorting = 'date_added';
+      } else {
+        finalSorting = sort;
+      }
+    }
+
+    url += `&sorting=${finalSorting}`;
+    if (finalSorting === 'toplist' && finalTopRange) {
+      url += `&topRange=${finalTopRange}`;
     }
 
     if (apiKey && apiKey !== 'your_wallhaven_api_key' && apiKey.trim().length > 0) {

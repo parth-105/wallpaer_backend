@@ -11,20 +11,22 @@ export const searchWallpapers = async (req: Request, res: Response, next: NextFu
         const type = (req.query.type as 'static' | 'live' | 'all') || 'all';
         const page = parseInt(req.query.page as string, 10) || 1;
         const sourcesParam = req.query.sources as string | undefined;
+        const sort = req.query.sort as string | undefined;
         const sourcesArray = sourcesParam ? sourcesParam.split(',') : ['pexels', 'pixabay', 'wallhaven'];
 
-        const cached = getCachedSearch(q, type, page);
+        const cacheKey = sort ? `${q}_${sort}` : q;
+        const cached = getCachedSearch(cacheKey, type, page);
         if (cached) {
             return res.json(createResponse({ 
-                data: { items: cached, query: q, type, page, sources: sourcesArray } 
+                data: { items: cached, query: q, type, page, sort, sources: sourcesArray } 
             }));
         }
 
-        const results = await searchAllSources(q, type, page, sourcesArray);
-        setCachedSearch(q, type, page, results);
+        const results = await searchAllSources(q, type, page, sourcesArray, sort);
+        setCachedSearch(cacheKey, type, page, results);
 
         return res.json(createResponse({ 
-            data: { items: results, query: q, type, page, sources: sourcesArray } 
+            data: { items: results, query: q, type, page, sort, sources: sourcesArray } 
         }));
     } catch (error) {
         next(error);

@@ -2,7 +2,7 @@ import axios from 'axios';
 import { ExternalWallpaper } from '../types/externalWallpaper.js';
 import { logInfo, logError } from '../utils/logger.js';
 
-export const searchPhotos = async (query: string, page: number = 1, perPage: number = 15, orientation?: string): Promise<ExternalWallpaper[]> => {
+export const searchPhotos = async (query: string, page: number = 1, perPage: number = 15, orientation?: string, sort?: string): Promise<ExternalWallpaper[]> => {
   const apiKey = process.env.PEXELS_API_KEY;
   if (!apiKey) {
     logInfo('Pexels API key not configured');
@@ -64,7 +64,7 @@ export const searchPhotos = async (query: string, page: number = 1, perPage: num
   }
 };
 
-export const searchVideos = async (query: string, page: number = 1, perPage: number = 15): Promise<ExternalWallpaper[]> => {
+export const searchVideos = async (query: string, page: number = 1, perPage: number = 15, sort?: string): Promise<ExternalWallpaper[]> => {
   const apiKey = process.env.PEXELS_API_KEY;
   if (!apiKey) {
     logInfo('Pexels API key not configured');

@@ -2,7 +2,7 @@ import axios from 'axios';
 import { ExternalWallpaper } from '../types/externalWallpaper.js';
 import { logInfo, logError } from '../utils/logger.js';
 
-export const searchImages = async (query: string, page: number = 1, perPage: number = 20): Promise<ExternalWallpaper[]> => {
+export const searchImages = async (query: string, page: number = 1, perPage: number = 20, sort?: string): Promise<ExternalWallpaper[]> => {
   const apiKey = process.env.PIXABAY_API_KEY;
   if (!apiKey) {
     logInfo('Pixabay API key not configured');
@@ -31,7 +31,8 @@ export const searchImages = async (query: string, page: number = 1, perPage: num
 
     const categoryConfig = PIXABAY_CATEGORY_PARAMS[cleanQuery];
     const minW = categoryConfig?.minWidth || 1080;
-    let url = `https://pixabay.com/api/?key=${apiKey}&image_type=photo&orientation=vertical&min_width=${minW}&min_height=1920&per_page=${perPage}&page=${page}&order=popular&safesearch=true`;
+    const orderParam = (sort === 'latest') ? 'latest' : 'popular';
+    let url = `https://pixabay.com/api/?key=${apiKey}&image_type=photo&orientation=vertical&min_width=${minW}&min_height=1920&per_page=${perPage}&page=${page}&order=${orderParam}&safesearch=true`;
 
     if (['trending', 'popular', 'daily best'].includes(cleanQuery)) {
       url += `&editors_choice=true`;
@@ -61,7 +62,7 @@ export const searchImages = async (query: string, page: number = 1, perPage: num
   }
 };
 
-export const searchVideos = async (query: string, page: number = 1, perPage: number = 20): Promise<ExternalWallpaper[]> => {
+export const searchVideos = async (query: string, page: number = 1, perPage: number = 20, sort?: string): Promise<ExternalWallpaper[]> => {
   const apiKey = process.env.PIXABAY_API_KEY;
   if (!apiKey) {
     logInfo('Pixabay API key not configured');
@@ -70,7 +71,8 @@ export const searchVideos = async (query: string, page: number = 1, perPage: num
 
   try {
     const cleanQuery = query.toLowerCase().trim();
-    let url = `https://pixabay.com/api/videos/?key=${apiKey}&per_page=${perPage}&page=${page}&order=popular&safesearch=true&video_type=film`;
+    const orderParam = (sort === 'latest') ? 'latest' : 'popular';
+    let url = `https://pixabay.com/api/videos/?key=${apiKey}&per_page=${perPage}&page=${page}&order=${orderParam}&safesearch=true&video_type=film`;
     if (['trending', 'popular', 'daily best'].includes(cleanQuery)) {
       url += `&editors_choice=true`;
     } else {

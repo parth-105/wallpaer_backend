@@ -53,7 +53,8 @@ export const searchAllSources = async (
   query: string, 
   type: 'static' | 'live' | 'all' = 'all', 
   page: number = 1, 
-  sources: string[] = ['pexels', 'pixabay', 'wallhaven']
+  sources: string[] = ['pexels', 'pixabay', 'wallhaven'],
+  sort?: string
 ): Promise<ExternalWallpaper[]> => {
   const includePexels = sources.includes('pexels');
   const includePixabay = sources.includes('pixabay');
@@ -67,9 +68,9 @@ export const searchAllSources = async (
     const staticPromises: Promise<ExternalWallpaper[]>[] = [];
     const staticWeights: number[] = [];
 
-    if (includeWallhaven) { staticPromises.push(wallhavenService.searchWallpapers(query, page, 24)); staticWeights.push(50); }
-    if (includePexels) { staticPromises.push(pexelsService.searchPhotos(query, page, 20, 'portrait')); staticWeights.push(30); }
-    if (includePixabay) { staticPromises.push(pixabayService.searchImages(query, page, 20)); staticWeights.push(20); }
+    if (includeWallhaven) { staticPromises.push(wallhavenService.searchWallpapers(query, page, 24, sort)); staticWeights.push(50); }
+    if (includePexels) { staticPromises.push(pexelsService.searchPhotos(query, page, 20, 'portrait', sort)); staticWeights.push(30); }
+    if (includePixabay) { staticPromises.push(pixabayService.searchImages(query, page, 20, sort)); staticWeights.push(20); }
 
     const results = await Promise.allSettled(staticPromises);
     const sets = results.map(res => res.status === 'fulfilled' ? res.value : []);
@@ -81,8 +82,8 @@ export const searchAllSources = async (
     const livePromises: Promise<ExternalWallpaper[]>[] = [];
     const liveWeights: number[] = [];
 
-    if (includePexels) { livePromises.push(pexelsService.searchVideos(query, page, 20)); liveWeights.push(60); }
-    if (includePixabay) { livePromises.push(pixabayService.searchVideos(query, page, 20)); liveWeights.push(40); }
+    if (includePexels) { livePromises.push(pexelsService.searchVideos(query, page, 20, sort)); liveWeights.push(60); }
+    if (includePixabay) { livePromises.push(pixabayService.searchVideos(query, page, 20, sort)); liveWeights.push(40); }
 
     const results = await Promise.allSettled(livePromises);
     const sets = results.map(res => res.status === 'fulfilled' ? res.value : []);
