@@ -11,6 +11,7 @@ export const searchPhotos = async (query: string, page: number = 1, perPage: num
 
   try {
     const cleanQuery = query.toLowerCase().trim();
+    if (cleanQuery === 'anime') return [];
 
     // Category-specific parameter mapping
     const PEXELS_CATEGORY_PARAMS: Record<string, { color?: string; size?: string; q?: string }> = {
@@ -24,9 +25,13 @@ export const searchPhotos = async (query: string, page: number = 1, perPage: num
       'ocean': { color: 'blue', q: 'ocean waves sea' },
       'nature': { q: 'nature landscape forest' },
       'abstract': { q: 'abstract colorful patterns' },
-      'anime': { q: 'anime illustration digital art' },
       'city': { q: 'city skyline urban night' },
       'supercars': { q: 'supercar sports car luxury' },
+      'space': { q: 'space galaxy nebula astronomy' },
+      'animals': { q: 'animals wildlife' },
+      'minimal': { q: 'minimalist minimal background' },
+      'mountains': { q: 'mountains peak alpine' },
+      'flowers': { q: 'flowers floral bloom' },
     };
 
     const categoryConfig = PEXELS_CATEGORY_PARAMS[cleanQuery];
@@ -73,6 +78,8 @@ export const searchVideos = async (query: string, page: number = 1, perPage: num
 
   try {
     const cleanQuery = query.toLowerCase().trim();
+    if (cleanQuery === 'anime') return [];
+    
     let url: string;
     if (['trending', 'popular', 'daily best'].includes(cleanQuery)) {
       url = `https://api.pexels.com/videos/popular?page=${page}&per_page=${perPage}`;

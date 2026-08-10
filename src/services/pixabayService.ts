@@ -13,7 +13,7 @@ export const searchImages = async (query: string, page: number = 1, perPage: num
     const cleanQuery = query.toLowerCase().trim();
 
     // Category-specific parameter mapping for Pixabay
-    const PIXABAY_CATEGORY_PARAMS: Record<string, { category?: string; colors?: string; minWidth?: number; q?: string }> = {
+    const PIXABAY_CATEGORY_PARAMS: Record<string, { category?: string; colors?: string; minWidth?: number; q?: string; imageType?: string }> = {
       'trending': {},
       'popular': {},
       'daily best': {},
@@ -24,15 +24,21 @@ export const searchImages = async (query: string, page: number = 1, perPage: num
       'ocean': { category: 'nature', colors: 'blue,turquoise', q: 'ocean' },
       'nature': { category: 'nature' },
       'abstract': { category: 'backgrounds', q: 'abstract' },
-      'anime': { q: 'anime' },
+      'anime': { q: 'anime', imageType: 'illustration' },
       'city': { category: 'buildings', q: 'city' },
       'supercars': { category: 'transportation', q: 'supercar' },
+      'space': { category: 'science', q: 'space galaxy' },
+      'animals': { category: 'animals', q: 'animals' },
+      'minimal': { category: 'backgrounds', q: 'minimal' },
+      'mountains': { category: 'nature', q: 'mountains' },
+      'flowers': { category: 'nature', q: 'flowers' },
     };
 
     const categoryConfig = PIXABAY_CATEGORY_PARAMS[cleanQuery];
     const minW = categoryConfig?.minWidth || 1080;
     const orderParam = (sort === 'latest') ? 'latest' : 'popular';
-    let url = `https://pixabay.com/api/?key=${apiKey}&image_type=photo&orientation=vertical&min_width=${minW}&min_height=1920&per_page=${perPage}&page=${page}&order=${orderParam}&safesearch=true`;
+    const imgType = categoryConfig?.imageType || 'photo';
+    let url = `https://pixabay.com/api/?key=${apiKey}&image_type=${imgType}&orientation=vertical&min_width=${minW}&min_height=1920&per_page=${perPage}&page=${page}&order=${orderParam}&safesearch=true`;
 
     if (['trending', 'popular', 'daily best'].includes(cleanQuery)) {
       url += `&editors_choice=true`;
