@@ -10,12 +10,35 @@ export const searchPhotos = async (query: string, page: number = 1, perPage: num
   }
 
   try {
-    let url = `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&page=${page}&per_page=${perPage}`;
     const cleanQuery = query.toLowerCase().trim();
+
+    // Category-specific parameter mapping
+    const PEXELS_CATEGORY_PARAMS: Record<string, { color?: string; size?: string; q?: string }> = {
+      'trending': {},
+      'popular': {},
+      'daily best': {},
+      'dark oled': { color: 'black' },
+      'dark': { color: 'black' },
+      '4k ultra': { size: 'large' },
+      '4k': { size: 'large' },
+      'ocean': { color: 'blue', q: 'ocean waves sea' },
+      'nature': { q: 'nature landscape forest' },
+      'abstract': { q: 'abstract colorful patterns' },
+      'anime': { q: 'anime illustration digital art' },
+      'city': { q: 'city skyline urban night' },
+      'supercars': { q: 'supercar sports car luxury' },
+    };
+
+    const categoryConfig = PEXELS_CATEGORY_PARAMS[cleanQuery];
+    let url: string;
+
     if (['trending', 'popular', 'daily best'].includes(cleanQuery)) {
-      url = `https://api.pexels.com/v1/curated?page=${page}&per_page=${perPage}`;
-    } else if (orientation) {
-      url += `&orientation=${orientation}`;
+      url = `https://api.pexels.com/v1/curated?page=${page}&per_page=${perPage}&orientation=portrait`;
+    } else {
+      const searchQuery = categoryConfig?.q || query;
+      url = `https://api.pexels.com/v1/search?query=${encodeURIComponent(searchQuery)}&page=${page}&per_page=${perPage}&orientation=portrait`;
+      if (categoryConfig?.color) url += `&color=${categoryConfig.color}`;
+      if (categoryConfig?.size) url += `&size=${categoryConfig.size}`;
     }
     
     const response = await axios.get(url, { 
@@ -49,10 +72,12 @@ export const searchVideos = async (query: string, page: number = 1, perPage: num
   }
 
   try {
-    let url = `https://api.pexels.com/videos/search?query=${encodeURIComponent(query)}&orientation=portrait&page=${page}&per_page=${perPage}`;
     const cleanQuery = query.toLowerCase().trim();
+    let url: string;
     if (['trending', 'popular', 'daily best'].includes(cleanQuery)) {
       url = `https://api.pexels.com/videos/popular?page=${page}&per_page=${perPage}`;
+    } else {
+      url = `https://api.pexels.com/videos/search?query=${encodeURIComponent(query)}&orientation=portrait&page=${page}&per_page=${perPage}`;
     }
     const response = await axios.get(url, { 
       headers: { Authorization: apiKey },
