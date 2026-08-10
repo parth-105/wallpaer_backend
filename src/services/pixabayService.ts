@@ -10,7 +10,13 @@ export const searchImages = async (query: string, page: number = 1, perPage: num
   }
 
   try {
-    const url = `https://pixabay.com/api/?key=${apiKey}&q=${encodeURIComponent(query)}&image_type=photo&orientation=vertical&min_width=1080&per_page=${perPage}&page=${page}`;
+    let url = `https://pixabay.com/api/?key=${apiKey}&image_type=photo&orientation=vertical&min_width=1080&per_page=${perPage}&page=${page}&order=popular`;
+    const cleanQuery = query.toLowerCase().trim();
+    if (['trending', 'popular', 'daily best'].includes(cleanQuery)) {
+      url += `&editors_choice=true`;
+    } else {
+      url += `&q=${encodeURIComponent(query)}`;
+    }
     const response = await axios.get(url, { timeout: 5000 });
     
     return response.data.hits.map((hit: any) => ({
@@ -39,7 +45,13 @@ export const searchVideos = async (query: string, page: number = 1, perPage: num
   }
 
   try {
-    const url = `https://pixabay.com/api/videos/?key=${apiKey}&q=${encodeURIComponent(query)}&per_page=${perPage}&page=${page}`;
+    let url = `https://pixabay.com/api/videos/?key=${apiKey}&per_page=${perPage}&page=${page}&order=popular`;
+    const cleanQuery = query.toLowerCase().trim();
+    if (['trending', 'popular', 'daily best'].includes(cleanQuery)) {
+      url += `&editors_choice=true`;
+    } else {
+      url += `&q=${encodeURIComponent(query)}`;
+    }
     const response = await axios.get(url, { timeout: 5000 });
     
     return response.data.hits

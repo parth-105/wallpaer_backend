@@ -11,7 +11,10 @@ export const searchPhotos = async (query: string, page: number = 1, perPage: num
 
   try {
     let url = `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&page=${page}&per_page=${perPage}`;
-    if (orientation) {
+    const cleanQuery = query.toLowerCase().trim();
+    if (['trending', 'popular', 'daily best'].includes(cleanQuery)) {
+      url = `https://api.pexels.com/v1/curated?page=${page}&per_page=${perPage}`;
+    } else if (orientation) {
       url += `&orientation=${orientation}`;
     }
     
@@ -46,7 +49,11 @@ export const searchVideos = async (query: string, page: number = 1, perPage: num
   }
 
   try {
-    const url = `https://api.pexels.com/videos/search?query=${encodeURIComponent(query)}&orientation=portrait&page=${page}&per_page=${perPage}`;
+    let url = `https://api.pexels.com/videos/search?query=${encodeURIComponent(query)}&orientation=portrait&page=${page}&per_page=${perPage}`;
+    const cleanQuery = query.toLowerCase().trim();
+    if (['trending', 'popular', 'daily best'].includes(cleanQuery)) {
+      url = `https://api.pexels.com/videos/popular?page=${page}&per_page=${perPage}`;
+    }
     const response = await axios.get(url, { 
       headers: { Authorization: apiKey },
       timeout: 5000 

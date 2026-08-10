@@ -1,1 +1,1 @@
-{"version":3,"file":"wallhavenService.d.ts","sourceRoot":"","sources":["../../src/services/wallhavenService.ts"],"names":[],"mappings":"AACA,OAAO,EAAE,iBAAiB,EAAE,MAAM,+BAA+B,CAAC;AAGlE,eAAO,MAAM,gBAAgB,GAAU,OAAO,MAAM,EAAE,OAAM,MAAU,EAAE,UAAS,MAAW,KAAG,OAAO,CAAC,iBAAiB,EAAE,CAqCzH,CAAC"}
+{"version":3,"file":"wallhavenService.d.ts","sourceRoot":"","sources":["../../src/services/wallhavenService.ts"],"names":[],"mappings":"AACA,OAAO,EAAE,iBAAiB,EAAE,MAAM,+BAA+B,CAAC;AAoBlE,eAAO,MAAM,gBAAgB,GAAU,OAAO,MAAM,EAAE,OAAM,MAAU,EAAE,UAAS,MAAW,KAAG,OAAO,CAAC,iBAAiB,EAAE,CA6DzH,CAAC"}

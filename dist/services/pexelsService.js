@@ -8,7 +8,11 @@ export const searchPhotos = async (query, page = 1, perPage = 15, orientation) =
     }
     try {
         let url = `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&page=${page}&per_page=${perPage}`;
-        if (orientation) {
+        const cleanQuery = query.toLowerCase().trim();
+        if (['trending', 'popular', 'daily best'].includes(cleanQuery)) {
+            url = `https://api.pexels.com/v1/curated?page=${page}&per_page=${perPage}`;
+        }
+        else if (orientation) {
             url += `&orientation=${orientation}`;
         }
         const response = await axios.get(url, {
@@ -40,7 +44,11 @@ export const searchVideos = async (query, page = 1, perPage = 15) => {
         return [];
     }
     try {
-        const url = `https://api.pexels.com/videos/search?query=${encodeURIComponent(query)}&orientation=portrait&page=${page}&per_page=${perPage}`;
+        let url = `https://api.pexels.com/videos/search?query=${encodeURIComponent(query)}&orientation=portrait&page=${page}&per_page=${perPage}`;
+        const cleanQuery = query.toLowerCase().trim();
+        if (['trending', 'popular', 'daily best'].includes(cleanQuery)) {
+            url = `https://api.pexels.com/videos/popular?page=${page}&per_page=${perPage}`;
+        }
         const response = await axios.get(url, {
             headers: { Authorization: apiKey },
             timeout: 5000

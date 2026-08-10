@@ -10,6 +10,7 @@ import { errorHandler } from './middleware/errorHandler.js';
 import { requestLogger } from './utils/logger.js';
 import { env } from './config/env.js';
 import { publicRateLimiter } from './middleware/rateLimiter.js';
+import { apiKeyAuth } from './middleware/apiKeyAuth.js';
 const app = express();
 // Get allowed origins, handle wildcard and empty values
 const clientOrigin = env.cors.clientOrigin;
@@ -87,7 +88,7 @@ app.use(cors({
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-API-Key'],
     exposedHeaders: ['Content-Type', 'Authorization'],
 }));
 app.use(helmet());
@@ -124,7 +125,7 @@ const cdnCacheHeaders = (_req, res, next) => {
 // This allows frontend to call /public/wallpapers or /api/public/wallpapers
 // These routes use the same controllers and middleware as /api routes
 // IMPORTANT: Routes must be mounted AFTER /api routes but BEFORE catch-all handler
-app.use('/public', publicRateLimiter, cdnCacheHeaders, publicRoutes);
+app.use('/public', apiKeyAuth, publicRateLimiter, cdnCacheHeaders, publicRoutes);
 app.use('/admin', adminRoutes);
 app.use('/auth', authRoutes);
 // Log route registration in development

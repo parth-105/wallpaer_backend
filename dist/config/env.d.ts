@@ -3,6 +3,7 @@ export declare const env: {
     port: number;
     mongoUri: string;
     jwtSecret: string;
+    apiKey: string;
     cloudinary: {
         cloudName: string;
         apiKey: string;
