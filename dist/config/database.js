@@ -1,6 +1,22 @@
 import mongoose from 'mongoose';
 import { env } from './env.js';
+import { AdminModel } from '../models/Admin.js';
 mongoose.set('strictQuery', true);
+// Auto-seed default admin user if database is empty
+async function ensureDefaultAdmin() {
+    try {
+        const adminCount = await AdminModel.countDocuments();
+        if (adminCount === 0) {
+            const email = process.env.ADMIN_EMAIL || 'admin@wallpaper.com';
+            const password = process.env.ADMIN_PASSWORD || 'AdminPassword123!';
+            await AdminModel.create({ email, password, role: 'admin' });
+            console.log(`[Auto-Seed] Default Admin account created: ${email}`);
+        }
+    }
+    catch (err) {
+        console.error('[Auto-Seed] Failed to check or seed admin:', err);
+    }
+}
 // Cache connection for serverless environments (like Vercel)
 let connectionPromise = null;
 export async function connectDatabase() {
@@ -23,6 +39,8 @@ export async function connectDatabase() {
                 socketTimeoutMS: 45000,
                 connectTimeoutMS: 10000,
             });
+            // Ensure default admin user exists
+            await ensureDefaultAdmin();
             // Handle connection events
             mongoose.connection.on('error', (err) => {
                 console.error('MongoDB connection error:', err);

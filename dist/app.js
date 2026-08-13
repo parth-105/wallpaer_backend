@@ -83,17 +83,16 @@ const corsOptions = {
 };
 // Apply CORS middleware
 app.use(cors(corsOptions));
-// Express OPTIONS preflight handler (responds 204 No Content for all preflight requests)
+// Express OPTIONS preflight handler (Guarantees 204 No Content for all preflight requests)
 app.use((req, res, next) => {
     if (req.method === 'OPTIONS') {
-        const origin = req.headers.origin;
-        if (isAllowedOrigin(origin ?? '')) {
-            res.setHeader('Access-Control-Allow-Origin', origin || 'https://wallpaer-admin-frontend.vercel.app');
-            res.setHeader('Access-Control-Allow-Credentials', 'true');
-            res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
-            res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With,X-API-Key,Accept,X-CSRF-Token');
-            return res.status(204).end();
-        }
+        const origin = req.headers.origin || 'https://wallpaer-admin-frontend.vercel.app';
+        res.setHeader('Access-Control-Allow-Origin', origin);
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-API-Key, Accept, X-CSRF-Token, X-Api-Version');
+        res.setHeader('Access-Control-Max-Age', '86400');
+        return res.status(204).end();
     }
     next();
 });
