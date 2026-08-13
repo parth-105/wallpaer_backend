@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { logInfo, logError } from '../utils/logger.js';
-export const searchImages = async (query, page = 1, perPage = 20) => {
+export const searchImages = async (query, page = 1, perPage = 20, sort) => {
     const apiKey = process.env.PIXABAY_API_KEY;
     if (!apiKey) {
         logInfo('Pixabay API key not configured');
@@ -20,13 +20,20 @@ export const searchImages = async (query, page = 1, perPage = 20) => {
             'ocean': { category: 'nature', colors: 'blue,turquoise', q: 'ocean' },
             'nature': { category: 'nature' },
             'abstract': { category: 'backgrounds', q: 'abstract' },
-            'anime': { q: 'anime' },
+            'anime': { q: 'anime', imageType: 'illustration' },
             'city': { category: 'buildings', q: 'city' },
             'supercars': { category: 'transportation', q: 'supercar' },
+            'space': { category: 'science', q: 'space galaxy' },
+            'animals': { category: 'animals', q: 'animals' },
+            'minimal': { category: 'backgrounds', q: 'minimal' },
+            'mountains': { category: 'nature', q: 'mountains' },
+            'flowers': { category: 'nature', q: 'flowers' },
         };
         const categoryConfig = PIXABAY_CATEGORY_PARAMS[cleanQuery];
         const minW = categoryConfig?.minWidth || 1080;
-        let url = `https://pixabay.com/api/?key=${apiKey}&image_type=photo&orientation=vertical&min_width=${minW}&min_height=1920&per_page=${perPage}&page=${page}&order=popular&safesearch=true`;
+        const orderParam = (sort === 'latest') ? 'latest' : 'popular';
+        const imgType = categoryConfig?.imageType || 'photo';
+        let url = `https://pixabay.com/api/?key=${apiKey}&image_type=${imgType}&orientation=vertical&min_width=${minW}&min_height=1920&per_page=${perPage}&page=${page}&order=${orderParam}&safesearch=true`;
         if (['trending', 'popular', 'daily best'].includes(cleanQuery)) {
             url += `&editors_choice=true`;
         }
@@ -57,7 +64,7 @@ export const searchImages = async (query, page = 1, perPage = 20) => {
         return [];
     }
 };
-export const searchVideos = async (query, page = 1, perPage = 20) => {
+export const searchVideos = async (query, page = 1, perPage = 20, sort) => {
     const apiKey = process.env.PIXABAY_API_KEY;
     if (!apiKey) {
         logInfo('Pixabay API key not configured');
@@ -65,7 +72,8 @@ export const searchVideos = async (query, page = 1, perPage = 20) => {
     }
     try {
         const cleanQuery = query.toLowerCase().trim();
-        let url = `https://pixabay.com/api/videos/?key=${apiKey}&per_page=${perPage}&page=${page}&order=popular&safesearch=true&video_type=film`;
+        const orderParam = (sort === 'latest') ? 'latest' : 'popular';
+        let url = `https://pixabay.com/api/videos/?key=${apiKey}&per_page=${perPage}&page=${page}&order=${orderParam}&safesearch=true&video_type=film`;
         if (['trending', 'popular', 'daily best'].includes(cleanQuery)) {
             url += `&editors_choice=true`;
         }

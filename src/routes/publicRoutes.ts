@@ -6,6 +6,7 @@ import {
   recordWallpaperClick,
 } from '../controllers/wallpaperController.js';
 import { ensureDatabase } from '../middleware/ensureDatabase.js';
+import { getVersionStatus } from '../controllers/versionController.js';
 import searchRoutes from './searchRoutes.js';
 
 const router = Router();
@@ -20,5 +21,8 @@ router.post('/wallpapers/:id/click', recordWallpaperClick);
 
 // Search routes (multi-source: Pexels + Pixabay + Wallhaven)
 router.use('/search', searchRoutes);
+
+// App version control & pre-release kill-switch status
+router.get('/version-check', getVersionStatus);
 
 export default router;

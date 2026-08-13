@@ -9,35 +9,56 @@ const CATEGORY_PARAMS = {
     'dark': { colors: '000000', sorting: 'toplist' },
     '4k ultra': { atleast: '3840x2160', sorting: 'toplist' },
     '4k': { atleast: '3840x2160', sorting: 'toplist' },
-    'ocean': { colors: '0066cc', q: 'ocean', sorting: 'relevance' },
-    'nature': { q: 'nature landscape', sorting: 'relevance' },
-    'abstract': { q: 'abstract colorful', sorting: 'relevance' },
-    'anime': { q: 'anime', sorting: 'relevance' },
-    'city': { q: 'city skyline urban night', sorting: 'relevance' },
-    'supercars': { q: 'sports car supercar', sorting: 'relevance' },
+    'ocean': { categories: '100', colors: '0066cc', q: 'ocean', sorting: 'relevance' },
+    'nature': { categories: '100', q: 'nature landscape', sorting: 'relevance' },
+    'abstract': { categories: '100', q: 'abstract colorful', sorting: 'relevance' },
+    'anime': { categories: '010', q: 'anime', sorting: 'relevance' },
+    'city': { categories: '100', q: 'city skyline urban night', sorting: 'relevance' },
+    'supercars': { categories: '100', q: 'sports car supercar', sorting: 'relevance' },
+    'space': { categories: '100', q: 'space galaxy', sorting: 'relevance' },
+    'animals': { categories: '100', q: 'animals', sorting: 'relevance' },
+    'minimal': { categories: '100', q: 'minimal', sorting: 'relevance' },
+    'mountains': { categories: '100', q: 'mountains', sorting: 'relevance' },
+    'flowers': { categories: '100', q: 'flowers', sorting: 'relevance' },
 };
-export const searchWallpapers = async (query, page = 1, perPage = 24) => {
+export const searchWallpapers = async (query, page = 1, perPage = 24, sort) => {
     try {
         const apiKey = process.env.WALLHAVEN_API_KEY;
         const cleanQuery = query.toLowerCase().trim();
         const categoryConfig = CATEGORY_PARAMS[cleanQuery];
         // Base URL — always request portrait ratios for phone wallpapers
         const minRes = categoryConfig?.atleast || '1920x1080';
-        let url = `https://wallhaven.cc/api/v1/search?categories=111&purity=100&atleast=${minRes}&ratios=9x16,10x16,9x18&page=${page}`;
-        if (categoryConfig) {
-            // Use mapped params for known categories
-            if (categoryConfig.sorting)
-                url += `&sorting=${categoryConfig.sorting}`;
-            if (categoryConfig.topRange)
-                url += `&topRange=${categoryConfig.topRange}`;
-            if (categoryConfig.colors)
-                url += `&colors=${categoryConfig.colors}`;
-            if (categoryConfig.q)
-                url += `&q=${encodeURIComponent(categoryConfig.q)}`;
+        const whCategories = categoryConfig?.categories || '111';
+        let url = `https://wallhaven.cc/api/v1/search?categories=${whCategories}&purity=100&atleast=${minRes}&ratios=9x16,10x16,9x18&page=${page}`;
+        // Determine query
+        if (categoryConfig && categoryConfig.q) {
+            url += `&q=${encodeURIComponent(categoryConfig.q)}`;
         }
         else {
-            // Free-text search
-            url += `&q=${encodeURIComponent(query)}&sorting=relevance`;
+            url += `&q=${encodeURIComponent(query)}`;
+        }
+        // Determine colors
+        if (categoryConfig && categoryConfig.colors) {
+            url += `&colors=${categoryConfig.colors}`;
+        }
+        // Determine sorting & topRange
+        let finalSorting = categoryConfig?.sorting || 'relevance';
+        let finalTopRange = categoryConfig?.topRange;
+        if (sort) {
+            if (sort.startsWith('toplist_')) {
+                finalSorting = 'toplist';
+                finalTopRange = sort.replace('toplist_', '');
+            }
+            else if (sort === 'latest') {
+                finalSorting = 'date_added';
+            }
+            else {
+                finalSorting = sort;
+            }
+        }
+        url += `&sorting=${finalSorting}`;
+        if (finalSorting === 'toplist' && finalTopRange) {
+            url += `&topRange=${finalTopRange}`;
         }
         if (apiKey && apiKey !== 'your_wallhaven_api_key' && apiKey.trim().length > 0) {
             url += `&apikey=${apiKey}`;

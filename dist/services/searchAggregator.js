@@ -44,7 +44,7 @@ const weightedMerge = (resultSets, weights) => {
     }
     return merged.slice(0, maxItems);
 };
-export const searchAllSources = async (query, type = 'all', page = 1, sources = ['pexels', 'pixabay', 'wallhaven']) => {
+export const searchAllSources = async (query, type = 'all', page = 1, sources = ['pexels', 'pixabay', 'wallhaven'], sort) => {
     const includePexels = sources.includes('pexels');
     const includePixabay = sources.includes('pixabay');
     const includeWallhaven = sources.includes('wallhaven');
@@ -55,15 +55,15 @@ export const searchAllSources = async (query, type = 'all', page = 1, sources = 
         const staticPromises = [];
         const staticWeights = [];
         if (includeWallhaven) {
-            staticPromises.push(wallhavenService.searchWallpapers(query, page, 24));
+            staticPromises.push(wallhavenService.searchWallpapers(query, page, 24, sort));
             staticWeights.push(50);
         }
         if (includePexels) {
-            staticPromises.push(pexelsService.searchPhotos(query, page, 20, 'portrait'));
+            staticPromises.push(pexelsService.searchPhotos(query, page, 20, 'portrait', sort));
             staticWeights.push(30);
         }
         if (includePixabay) {
-            staticPromises.push(pixabayService.searchImages(query, page, 20));
+            staticPromises.push(pixabayService.searchImages(query, page, 20, sort));
             staticWeights.push(20);
         }
         const results = await Promise.allSettled(staticPromises);
@@ -75,11 +75,11 @@ export const searchAllSources = async (query, type = 'all', page = 1, sources = 
         const livePromises = [];
         const liveWeights = [];
         if (includePexels) {
-            livePromises.push(pexelsService.searchVideos(query, page, 20));
+            livePromises.push(pexelsService.searchVideos(query, page, 20, sort));
             liveWeights.push(60);
         }
         if (includePixabay) {
-            livePromises.push(pixabayService.searchVideos(query, page, 20));
+            livePromises.push(pixabayService.searchVideos(query, page, 20, sort));
             liveWeights.push(40);
         }
         const results = await Promise.allSettled(livePromises);

@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { logInfo, logError } from '../utils/logger.js';
-export const searchPhotos = async (query, page = 1, perPage = 15, orientation) => {
+export const searchPhotos = async (query, page = 1, perPage = 15, orientation, sort) => {
     const apiKey = process.env.PEXELS_API_KEY;
     if (!apiKey) {
         logInfo('Pexels API key not configured');
@@ -8,6 +8,8 @@ export const searchPhotos = async (query, page = 1, perPage = 15, orientation) =
     }
     try {
         const cleanQuery = query.toLowerCase().trim();
+        if (cleanQuery === 'anime')
+            return [];
         // Category-specific parameter mapping
         const PEXELS_CATEGORY_PARAMS = {
             'trending': {},
@@ -20,9 +22,13 @@ export const searchPhotos = async (query, page = 1, perPage = 15, orientation) =
             'ocean': { color: 'blue', q: 'ocean waves sea' },
             'nature': { q: 'nature landscape forest' },
             'abstract': { q: 'abstract colorful patterns' },
-            'anime': { q: 'anime illustration digital art' },
             'city': { q: 'city skyline urban night' },
             'supercars': { q: 'supercar sports car luxury' },
+            'space': { q: 'space galaxy nebula astronomy' },
+            'animals': { q: 'animals wildlife' },
+            'minimal': { q: 'minimalist minimal background' },
+            'mountains': { q: 'mountains peak alpine' },
+            'flowers': { q: 'flowers floral bloom' },
         };
         const categoryConfig = PEXELS_CATEGORY_PARAMS[cleanQuery];
         let url;
@@ -59,7 +65,7 @@ export const searchPhotos = async (query, page = 1, perPage = 15, orientation) =
         return [];
     }
 };
-export const searchVideos = async (query, page = 1, perPage = 15) => {
+export const searchVideos = async (query, page = 1, perPage = 15, sort) => {
     const apiKey = process.env.PEXELS_API_KEY;
     if (!apiKey) {
         logInfo('Pexels API key not configured');
@@ -67,6 +73,8 @@ export const searchVideos = async (query, page = 1, perPage = 15) => {
     }
     try {
         const cleanQuery = query.toLowerCase().trim();
+        if (cleanQuery === 'anime')
+            return [];
         let url;
         if (['trending', 'popular', 'daily best'].includes(cleanQuery)) {
             url = `https://api.pexels.com/videos/popular?page=${page}&per_page=${perPage}`;
