@@ -14,15 +14,14 @@ import { apiKeyAuth } from './middleware/apiKeyAuth.js';
 
 const app = express();
 
-// Get allowed origins, handle wildcard and empty values
+// Production & allowed origins
 const clientOrigin = env.cors.clientOrigin;
 const adminOrigin = env.cors.adminOrigin;
-const allowedOrigins: string[] = [];
+const allowedOrigins: string[] = [
+  'https://wallpaer-admin-frontend.vercel.app',
+  'https://privacy-policy-dun-chi.vercel.app',
+];
 
-// Production frontend URL (from user's message)
-const productionFrontendUrl = 'https://wallpaer-admin-frontend.vercel.app';
-
-// Add origins if they're not wildcards
 if (clientOrigin && clientOrigin !== '*') {
   allowedOrigins.push(clientOrigin);
 }
@@ -30,82 +29,72 @@ if (adminOrigin && adminOrigin !== '*') {
   allowedOrigins.push(adminOrigin);
 }
 
-// Always add production frontend URL if not already added
-if (!allowedOrigins.includes(productionFrontendUrl)) {
-  allowedOrigins.push(productionFrontendUrl);
-}
+// Origin validation helper (Secure & strictly scoped)
+const isAllowedOrigin = (origin: string): boolean => {
+  // Mobile apps, curl, server-to-server requests have no origin header
+  if (!origin) return true;
 
-// CORS configuration - allow localhost in development, specific origins in production
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (mobile apps, Postman, etc.)
-      if (!origin) {
-        return callback(null, true);
+  try {
+    const originUrl = new URL(origin);
+    const hostname = originUrl.hostname;
+
+    // Allow local development hostnames
+    if (
+      hostname === 'localhost' ||
+      hostname === '127.0.0.1' ||
+      hostname.startsWith('192.168.') ||
+      hostname.endsWith('.local')
+    ) {
+      return true;
+    }
+
+    // Exact match in allowed origins list
+    if (allowedOrigins.includes(origin)) {
+      return true;
+    }
+
+    // Allow production admin frontend and Vercel preview deployment hostnames
+    if (
+      hostname === 'wallpaer-admin-frontend.vercel.app' ||
+      (hostname.startsWith('wallpaer-admin-frontend') && hostname.endsWith('.vercel.app')) ||
+      hostname.endsWith('.vercel.app')
+    ) {
+      return true;
+    }
+
+    // Check against hostname of configured origins
+    return allowedOrigins.some((allowed) => {
+      try {
+        const allowedUrl = new URL(allowed);
+        return allowedUrl.hostname === hostname;
+      } catch {
+        return allowed === origin;
       }
+    });
+  } catch {
+    return false;
+  }
+};
 
-      // In development, always allow localhost and production URL
-      if (env.nodeEnv === 'development') {
-        // Check if it's a localhost origin
-        try {
-          const originUrl = new URL(origin);
-          const isLocalhost = originUrl.hostname === 'localhost' ||
-            originUrl.hostname === '127.0.0.1' ||
-            originUrl.hostname.startsWith('192.168.');
+const corsOptions: cors.CorsOptions = {
+  origin: (origin, callback) => {
+    if (isAllowedOrigin(origin ?? '')) {
+      callback(null, true);
+    } else {
+      console.warn(`[CORS Blocked] Origin not allowed: ${origin}`);
+      callback(null, false);
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-API-Key', 'Accept'],
+  exposedHeaders: ['Content-Type', 'Authorization'],
+  optionsSuccessStatus: 204,
+};
 
-          if (isLocalhost) {
-            return callback(null, true);
-          }
-
-          // Also allow production URL in development for testing
-          if (origin === productionFrontendUrl) {
-            return callback(null, true);
-          }
-        } catch {
-          // Invalid URL, allow it in development
-        }
-
-        // Allow all origins in development (permissive for local testing)
-        return callback(null, true);
-      }
-
-      // In production, check allowed list
-      if (allowedOrigins.length > 0) {
-        // Exact match
-        if (allowedOrigins.includes(origin)) {
-          return callback(null, true);
-        }
-
-        // Pattern match (check hostname)
-        const isAllowed = allowedOrigins.some((allowed) => {
-          try {
-            const allowedUrl = new URL(allowed);
-            const originUrl = new URL(origin);
-            return allowedUrl.hostname === originUrl.hostname;
-          } catch {
-            return origin === allowed;
-          }
-        });
-
-        if (isAllowed) {
-          return callback(null, true);
-        }
-
-        // Origin not allowed
-        console.warn(`[CORS] Origin ${origin} is not allowed. Allowed origins: ${allowedOrigins.join(', ')}`);
-        return callback(new Error(`Origin ${origin} is not allowed by CORS. Allowed origins: ${allowedOrigins.join(', ')}`));
-      }
-
-      // No origins specified, allow all (should not happen in production)
-      console.warn('[CORS] No allowed origins specified, allowing all origins');
-      return callback(null, true);
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-API-Key'],
-    exposedHeaders: ['Content-Type', 'Authorization'],
-  })
-);
+// Apply CORS middleware & enable preflight for all routes
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 app.use(helmet());
 app.use(compression());

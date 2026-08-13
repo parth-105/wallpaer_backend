@@ -2,6 +2,10 @@ import jwt from 'jsonwebtoken';
 import createHttpError from 'http-errors';
 import { env } from '../config/env.js';
 export function authenticateJwt(req, _res, next) {
+    // Always allow OPTIONS preflight requests to pass through CORS handler
+    if (req.method === 'OPTIONS') {
+        return next();
+    }
     // Verify JWT secret is configured
     if (!env.jwtSecret) {
         return next(createHttpError(500, 'JWT secret is not configured'));
