@@ -28,7 +28,7 @@ if (adminOrigin && adminOrigin !== '*') {
 // Origin validation helper (Secure & strictly scoped)
 const isAllowedOrigin = (origin) => {
     // Mobile apps, curl, server-to-server requests have no origin header
-    if (!origin)
+    if (!origin || origin === 'null')
         return true;
     try {
         const originUrl = new URL(origin);
@@ -77,14 +77,28 @@ const corsOptions = {
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-API-Key', 'Accept'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-API-Key', 'Accept', 'X-CSRF-Token'],
     exposedHeaders: ['Content-Type', 'Authorization'],
     optionsSuccessStatus: 204,
 };
-// Apply CORS middleware & enable preflight for all routes
+// Apply CORS middleware
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
-app.use(helmet());
+// Express OPTIONS preflight handler (responds 204 No Content for all preflight requests)
+app.use((req, res, next) => {
+    if (req.method === 'OPTIONS') {
+        const origin = req.headers.origin;
+        if (isAllowedOrigin(origin ?? '')) {
+            res.setHeader('Access-Control-Allow-Origin', origin || 'https://wallpaer-admin-frontend.vercel.app');
+            res.setHeader('Access-Control-Allow-Credentials', 'true');
+            res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+            res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With,X-API-Key,Accept,X-CSRF-Token');
+            return res.status(204).end();
+        }
+    }
+    next();
+});
+// Configure Helmet to allow cross-origin requests
+app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(compression());
 // Vercel serverless functions have a 4.5MB body size limit
 // Set limit to 4MB to leave room for other data

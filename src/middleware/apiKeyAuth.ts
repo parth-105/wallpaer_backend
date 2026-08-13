@@ -7,14 +7,20 @@ export const apiKeyAuth = (req: Request, res: Response, next: NextFunction) => {
     return next();
   }
 
+  // 1. Allow if valid X-API-Key header is present (Mobile Flutter App)
   const apiKey = req.header('X-API-Key');
-
-  if (!apiKey || apiKey !== env.apiKey) {
-    return res.status(401).json({
-      success: false,
-      message: 'Unauthorized: Invalid API Key',
-    });
+  if (apiKey && apiKey === env.apiKey) {
+    return next();
   }
 
-  next();
+  // 2. Allow if Authorization Bearer header is present (Admin Panel Dashboard session)
+  const authHeader = req.header('Authorization');
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    return next();
+  }
+
+  return res.status(401).json({
+    success: false,
+    message: 'Unauthorized: Missing or invalid API Key / Authorization token',
+  });
 };
