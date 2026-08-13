@@ -118,9 +118,16 @@ app.use(express.json({ limit: '4mb' }));
 app.use(express.urlencoded({ extended: true, limit: '4mb' }));
 app.use(requestLogger);
 
+import { getVersionStatus } from './controllers/versionController.js';
+
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', uptime: process.uptime() });
 });
+
+// App version check endpoints (Direct root mount for mobile splash screens)
+app.get('/version-check', getVersionStatus);
+app.get('/api/version-check', getVersionStatus);
+app.get('/public/version-check', getVersionStatus);
 
 // Test route to verify route registration
 app.get('/test-routes', (_req, res) => {
