@@ -8,6 +8,11 @@ import { logError, logInfo } from '../utils/logger.js';
  * This is especially important for serverless environments where connections might be cold
  */
 export async function ensureDatabase(req: Request, res: Response, next: NextFunction): Promise<void> {
+  // Always allow OPTIONS preflight requests to pass through without blocking on DB connection
+  if (req.method === 'OPTIONS') {
+    return next();
+  }
+
   try {
     // Check if already connected
     if (mongoose.connection.readyState === 1) {

@@ -4,13 +4,15 @@ export const publicRateLimiter = rateLimit({
     max: 300,
     standardHeaders: true,
     legacyHeaders: false,
-    message: { success: false, message: 'Too many requests, please try again later.' }
+    skip: (req) => req.method === 'OPTIONS',
+    message: { success: false, message: 'Too many requests, please try again later.' },
 });
 export const searchRateLimiter = rateLimit({
     windowMs: 60 * 1000,
     max: 100,
     standardHeaders: true,
     legacyHeaders: false,
-    message: { success: false, message: 'Too many requests, please try again later.' }
+    skip: (req) => req.method === 'OPTIONS',
+    message: { success: false, message: 'Too many requests, please try again later.' },
 });
 //# sourceMappingURL=rateLimiter.js.map
