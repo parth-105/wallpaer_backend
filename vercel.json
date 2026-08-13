@@ -10,16 +10,11 @@
       ]
     }
   ],
-  "rewrites": [
+  "routes": [
     {
-      "source": "/(.*)",
-      "destination": "/api"
+      "src": "/(.*)",
+      "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+      "dest": "/api/index.ts"
     }
-  ],
-  "functions": {
-    "api/index.ts": {
-      "memory": 1024,
-      "maxDuration": 30
-    }
-  }
+  ]
 }
